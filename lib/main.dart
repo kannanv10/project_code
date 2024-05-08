@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:disposebag/disposebag.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart'
     show debugPrint, debugPrintSynchronously, kReleaseMode;
 import 'package:flutter/material.dart';

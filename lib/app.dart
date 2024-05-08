@@ -12,6 +12,7 @@ import 'package:node_auth/domain/usecases/logout_use_case.dart';
 import 'package:node_auth/domain/usecases/register_use_case.dart';
 import 'package:node_auth/domain/usecases/upload_image_use_case.dart';
 import 'package:node_auth/pages/crop_details_page.dart';
+import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 import 'package:node_auth/pages/home/home.dart';
 import 'package:node_auth/pages/login/login.dart';
 import 'package:node_auth/pages/register/register.dart';
