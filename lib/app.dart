@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
       Navigator.defaultRouteName: (context) {
         return Provider<GetAuthStateUseCase>.factory(
           (context) => GetAuthStateUseCase(context.get()),
-          child: const CropDetailsPage(),
+          child: GreenHouseDetailsPage(),
         );
       },
       RegisterPage.routeName: (context) {
