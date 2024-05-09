@@ -1,4 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+final databaseReference = FirebaseDatabase.instance.ref();
+final TextEditingController namecontroller = TextEditingController();
+String Panval = '0';
+final TextEditingController namcontroller = TextEditingController();
+var display;
+String pannode ='user/1@gmail/greenhouseDetails/Green1';
 
 class CalculationPage extends StatefulWidget {
   final String selectedCrop;
@@ -8,6 +16,8 @@ class CalculationPage extends StatefulWidget {
   final String rowSpacing;
   final String cropSpacing;
   final String dripperDischarge;
+  final String pan;
+
 
   const CalculationPage({super.key,
     required this.selectedCrop,
@@ -17,6 +27,7 @@ class CalculationPage extends StatefulWidget {
     required this.rowSpacing,
     required this.cropSpacing,
     required this.dripperDischarge,
+    required this.pan,
   });
 
   @override
@@ -32,6 +43,14 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
 
   @override
   void initState() {
+
+    print(widget.selectedCrop);
+      print(widget.selectedDuration);
+      print(widget.selectedDate);
+      print(widget.selectedWettingArea);
+      print(widget.rowSpacing);
+      print(widget.cropSpacing);
+      print(widget.dripperDischarge);
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -49,8 +68,26 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
   }
 
   void performCalculations() {
+    // DatabaseReference _test = FirebaseDatabase.instance.ref().child(pan);
+    // _test.onValue.listen((event) {
+    //   setState(() {
+    //     Panval = event.snapshot.value.toString();
+    //   });
+    //   print(_test);
+    // });
+
+  //   {greenHouseId: 101,
+  // userId: kannan@mail,
+  //   rainFall: ''}
+  //
+  // {greenHouseId: 102,
+  //   userId: kannan@mail}
+  //
+  //   {greenHouseId: 103,
+  //   userId: kannankumar@mail}
+
     // Sample value for Ep (pan evaporation), to be replaced with actual value from Firebase
-    double epValue = 5.0; // Example value, replace with actual value from Firebase
+    //double epValue = 5.0; // Example value, replace with actual value from Firebase
 
     // Retrieve Kc values based on selected crop
     double kcInitial = 0.0;
@@ -87,11 +124,16 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
       kc = kcMid;
     } else {
       kc = kcFinal;
-    }
+    };
+
+
+
+
+
 
     // Calculate Etc (crop evapotranspiration)
-    double etc = kc * epValue;
-
+    double etc = kc * double.parse(pan) ;
+    // double.parse(Panval)
     // Perform remaining calculations
     result = etc *
         int.parse(widget.cropSpacing) *
@@ -101,7 +143,22 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
         (60) /
         int.parse(widget.dripperDischarge);
 
-    setState(() {}); // Update the UI with the calculated result
+    namecontroller.text = result ?.toString() ?? '';
+
+
+
+    setState(() {
+      display = result?.toStringAsFixed(2);
+      result ?? namecontroller;
+    } );
+
+    databaseReference.child("5").set({
+      'Operation time':namecontroller.text.toString(),
+    });// Update the UI with the calculated result
+
+
+
+
   }
 
   @override
@@ -168,9 +225,41 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
                       setState(() {
                         isIrrigationEnabled = value;
                       });
+
+                      String operationTime = isIrrigationEnabled ? "On" : "Off";
+
+                      databaseReference.child("6").set({
+                        "Motor status": operationTime,
+                      });
                     },
                     activeColor: Colors.green,
-                  ),
+                  )
+
+                  // Switch(
+                  //    value: isIrrigationEnabled,
+                  //   onChanged: (value) {
+                  //     setState(() {
+                  //       isIrrigationEnabled = value ;
+                  //
+                  //     });
+                  //     if(isIrrigationEnabled = value){
+                  //       namcontroller.text = "On";
+                  //
+                  //       databaseReference.child("6").set({
+                  //         'Operation time':namcontroller.text.toString(),
+                  //       });
+                  //
+                  //     }
+                  //     else if (isIrrigationEnabled =! value){
+                  //       namcontroller.text = "Off";
+                  //
+                  //       databaseReference.child("6").set({
+                  //         'Operation time':namcontroller.text.toString(),
+                  //       });
+                  //     }
+                  //   },
+                  //   activeColor: Colors.green,
+                  // ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -215,7 +304,10 @@ class _CalculationPageState extends State<CalculationPage> with SingleTickerProv
                   ],
                 ),
                 child: Text(
-                  'Operation Time: ${result ?? 'N/A'} minutes',
+
+
+
+                  'Operation Time: ${display ?? ""} minutes',
                   style: const TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),

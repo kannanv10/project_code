@@ -4,7 +4,7 @@ import 'package:did_change_dependencies/did_change_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_pattern/flutter_bloc_pattern.dart';
 import 'package:flutter_disposebag/flutter_disposebag.dart';
-import 'package:node_auth/pages/crop_details_page.dart';
+import 'package:node_auth/pages/firstpage.dart';
 import 'package:node_auth/pages/login/login.dart';
 import 'package:node_auth/pages/register/register.dart';
 import 'package:node_auth/pages/reset_password/reset_password_page.dart';

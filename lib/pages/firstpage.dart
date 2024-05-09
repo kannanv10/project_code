@@ -1,8 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 import 'package:node_auth/Pages/CalculationPage.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+// class crop_details_pages extends StatefulWidget {
+//   final String selectedCrop;
+//   final String selectedDuration;
+//   final DateTime selectedDate;
+//   final String selectedWettingArea;
+//   final String rowSpacing;
+//   final String cropSpacing;
+//   final String dripperDischarge;
+// const crop_details_pages({super.key,
+//     required this.selectedCrop,
+//     required this.selectedDuration,
+//     required this.selectedDate,
+//     required this.selectedWettingArea,
+//     required this.rowSpacing,
+//     required this.cropSpacing,
+//     required this.dripperDischarge,
+// });
+// class CalculationPages extends StatefulWidget {
+//   final String selectedCrop;
+//   final String selectedDuration;
+//   final DateTime selectedDate;
+//   final String selectedWettingArea;
+//   final String rowSpacing;
+//   final String cropSpacing;
+//   final String dripperDischarge;
+//
+//
+//   const CalculationPages({super.key,
+//     required this.selectedCrop,
+//     required this.selectedDuration,
+//     required this.selectedDate,
+//     required this.selectedWettingArea,
+//     required this.rowSpacing,
+//     required this.cropSpacing,
+//     required this.dripperDischarge,
+//   });
+//
+//   @override
+//   _CalculationPageState createState() => _CalculationPageState();
+// }
 
 class CropDetailsPage extends StatefulWidget {
+  final String? selectedGreenKey;
+
+  CropDetailsPage({this.selectedGreenKey});
   static const routeName = '/crop_details_page';
+
   @override
   _CropDetailsPageState createState() => _CropDetailsPageState();
 }
@@ -13,6 +60,8 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   final TextEditingController _dripperDischargeController = TextEditingController();
   final themeData = ThemeData(brightness: Brightness.light);
 
+
+
   String _selectedCrop = '--Select Variety--';
   String _selectedDuration = '--Select Duration--';
   String _selectedWettingArea = '--Select Area Wetting Percentage--';
@@ -20,7 +69,11 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   List<String> durationDropDown = ['--Select Duration--', '90', '110', '150'];
   List<String> areaDropDown = ['--Select Area Wetting Percentage--', '50', '70', '80'];
 
+
   DateTime _selectedDate = DateTime.now();
+  String pan = '0';
+  String pans = '0';
+
 
   @override
   Widget build(BuildContext context) {
@@ -112,20 +165,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
               ElevatedButton(
                 onPressed: () {
                   // Navigate to CalculationPage and pass crop details
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CalculationPage(
-                        selectedCrop: _selectedCrop,
-                        selectedDuration: _selectedDuration,
-                        selectedDate: _selectedDate,
-                        selectedWettingArea: _selectedWettingArea,
-                        rowSpacing: _rowSpacingController.text,
-                        cropSpacing: _cropSpacingController.text,
-                        dripperDischarge: _dripperDischargeController.text,
-                      ),
-                    ),
-                  );
+                  fetchPanAndNavigateToCalculationPage();
                 },
                 child: const Text('Save'),
               ),
@@ -213,8 +253,31 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
     }
   }
 
-  void saveCropDetails() async {
-    // Implement saving crop details to Firebase or other storage here
-    print('Crop details saved');
+  void fetchPanAndNavigateToCalculationPage() async {
+    try {
+      final snapshot = await FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/${widget.selectedGreenKey}/pan').once();
+      setState(() {
+        pans = snapshot.snapshot.value.toString();
+      });
+      // Navigate to CalculationPage and pass crop details along with pan
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CalculationPage(
+            selectedCrop: _selectedCrop,
+            selectedDuration: _selectedDuration,
+            selectedDate: _selectedDate,
+            selectedWettingArea: _selectedWettingArea,
+            rowSpacing: _rowSpacingController.text,
+            cropSpacing: _cropSpacingController.text,
+            dripperDischarge: _dripperDischargeController.text,
+            pan: pans,
+          ),
+        ),
+      );
+    } catch (error) {
+      print('Failed to fetch pan: $error');
+    }
   }
 }
+
