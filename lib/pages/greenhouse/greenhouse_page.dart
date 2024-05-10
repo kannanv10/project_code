@@ -10,7 +10,7 @@ late String selectedCrop;
 late String selectedDate;
 late String selectedDuration;
 late String selectedWettingArea;
-late String pan;
+var pan = '0';
 class GreenHouseDetailsPage extends StatefulWidget {
   @override
   _GreenHouseDetailsPageState createState() => _GreenHouseDetailsPageState();
@@ -29,7 +29,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
   }
 
   void fetchData() async {
-    final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail');
+    final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails');
     await ref.once().then((event) {
       final DataSnapshot snapshot = event.snapshot;
       print(snapshot.value.toString());
@@ -98,6 +98,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Select a Greenhouse device'),
+
           content: DropdownButton<String>(
             value: selectedGreenKey, // Set the selected value
             onChanged: (String? newValue) {
@@ -122,7 +123,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
   }
 
   void fetchDataFromFirebase(String? selectedGreenKey) async {
-    final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/$selectedGreenKey/selectedCrop');
+    final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/$selectedGreenKey');
     await ref.once().then((event) {
       final DataSnapshot snapshot = event.snapshot;
       print(snapshot.value.toString());
@@ -131,42 +132,45 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
       setState(() {
         kannanKeys = snapshot.value.toString(); // Update kannanKey with the retrieved value
       });
+      final Map<dynamic, dynamic>? data = event.snapshot.value as Map<dynamic, dynamic>?;
 
-      if (snapshot.value != null ) {
-        Map<dynamic, dynamic> data = snapshot.value as Map<dynamic, dynamic>;
-        assignValuesFromFirebase(data);
+      if (data != null) {
+        // If data is not null, check if it contains 'cropSpacing'
+        if (data.containsKey('cropSpacing')) {
+          // If 'cropSpacing' is present, assign values and navigate to CalculationPage
+          assignValuesFromFirebase(data);
 
-        // Navigate to CalculationPage with the assigned values
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CalculationPage(
-              pan: pan,
-              cropSpacing: cropSpacing,
-              dripperDischarge: dripperDischarge,
-              rowSpacing: rowSpacing,
-              selectedCrop: selectedCrop,
-              selectedDate: DateTime.parse(selectedDate),
-              selectedDuration: selectedDuration,
-              selectedWettingArea: selectedWettingArea,
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CalculationPage(
+                pan: pan,
+                cropSpacing: cropSpacing,
+                dripperDischarge: dripperDischarge,
+                rowSpacing: rowSpacing,
+                selectedCrop: selectedCrop,
+                selectedDate: DateTime.parse(selectedDate),
+                selectedDuration: selectedDuration,
+                selectedWettingArea: selectedWettingArea,
+              ),
             ),
-          ),
-        );
-      } else {
+          );
+        } else {
         // If data is null, navigate to page 1
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CropDetailsPage(selectedGreenKey: selectedGreenKey),
+            builder: (context) => CropDetailsPage(),
           ),
         );
-      }
-    }).catchError((error) {
+      }}}
+    ).catchError((error) {
       print('Failed to fetch data: $error');
     });
   }
 
   void assignValuesFromFirebase(Map<dynamic, dynamic> data) {
+    print('Pan:$pan');
     setState(() {
       cropSpacing = data['cropSpacing'].toString();
       dripperDischarge = data['dripperDischarge'].toString();
@@ -195,7 +199,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
 
 
 
-
+//
 // import 'package:firebase_database/firebase_database.dart';
 // import 'package:flutter/material.dart';
 // import 'package:node_auth/pages/greenhouse/greenhouse_details.dart';
@@ -350,7 +354,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
 //         Navigator.push(
 //           context,
 //           MaterialPageRoute(
-//             builder: (context) => CalculationPage(
+//             builder: (context) => CalculationPage(pan: '4' ,
 //               cropSpacing: data['cropSpacing'].toString(),
 //               dripperDischarge: data['dripperDischarge'].toString(),
 //               rowSpacing: data['rowSpacing'].toString(),
@@ -388,7 +392,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
 //     return greenKeys;
 //   }
 // }
-//
+
 
 
 

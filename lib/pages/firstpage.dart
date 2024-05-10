@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
 import 'package:node_auth/Pages/CalculationPage.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 // class crop_details_pages extends StatefulWidget {
 //   final String selectedCrop;
 //   final String selectedDuration;
@@ -45,11 +43,7 @@ import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 // }
 
 class CropDetailsPage extends StatefulWidget {
-  final String? selectedGreenKey;
-
-  CropDetailsPage({this.selectedGreenKey});
   static const routeName = '/crop_details_page';
-
   @override
   _CropDetailsPageState createState() => _CropDetailsPageState();
 }
@@ -61,7 +55,6 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   final themeData = ThemeData(brightness: Brightness.light);
 
 
-
   String _selectedCrop = '--Select Variety--';
   String _selectedDuration = '--Select Duration--';
   String _selectedWettingArea = '--Select Area Wetting Percentage--';
@@ -69,9 +62,8 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   List<String> durationDropDown = ['--Select Duration--', '90', '110', '150'];
   List<String> areaDropDown = ['--Select Area Wetting Percentage--', '50', '70', '80'];
 
-
   DateTime _selectedDate = DateTime.now();
-  String pan = '0';
+  String ?pan;
   String pans = '0';
 
 
@@ -255,15 +247,26 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
 
   void fetchPanAndNavigateToCalculationPage() async {
     try {
-      final snapshot = await FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/${widget.selectedGreenKey}/pan').once();
-      setState(() {
-        pans = snapshot.snapshot.value.toString();
+      // Reference to the database
+      final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/Green3');
+
+      // Push data to Firebase
+      await ref.set({
+        'selectedCrop': _selectedCrop,
+        'selectedDuration': _selectedDuration,
+        'selectedDate': _selectedDate.toIso8601String(),
+        'selectedWettingArea': _selectedWettingArea,
+        'rowSpacing': _rowSpacingController.text,
+        'cropSpacing': _cropSpacingController.text,
+        'dripperDischarge': _dripperDischargeController.text,
       });
-      // Navigate to CalculationPage and pass crop details along with pan
+
+      // Navigate to CalculationPage and pass crop details
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CalculationPage(
+            pan: pans,
             selectedCrop: _selectedCrop,
             selectedDuration: _selectedDuration,
             selectedDate: _selectedDate,
@@ -271,13 +274,11 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             rowSpacing: _rowSpacingController.text,
             cropSpacing: _cropSpacingController.text,
             dripperDischarge: _dripperDischargeController.text,
-            pan: pans,
           ),
         ),
       );
     } catch (error) {
       print('Failed to fetch pan: $error');
-    }
-  }
+    }}
 }
 
