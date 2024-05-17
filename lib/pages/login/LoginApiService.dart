@@ -34,7 +34,7 @@ class LoginApiService {
 
   void navigateDashboardPage(BuildContext context) async {
     await Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => CropDetailsPage()));
+        MaterialPageRoute(builder: (context) => CropDetailsPage(greenKey: '')));
   }
 
 }

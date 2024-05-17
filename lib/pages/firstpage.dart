@@ -1,49 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:node_auth/Pages/CalculationPage.dart';
 import 'package:firebase_database/firebase_database.dart';
-// class crop_details_pages extends StatefulWidget {
-//   final String selectedCrop;
-//   final String selectedDuration;
-//   final DateTime selectedDate;
-//   final String selectedWettingArea;
-//   final String rowSpacing;
-//   final String cropSpacing;
-//   final String dripperDischarge;
-// const crop_details_pages({super.key,
-//     required this.selectedCrop,
-//     required this.selectedDuration,
-//     required this.selectedDate,
-//     required this.selectedWettingArea,
-//     required this.rowSpacing,
-//     required this.cropSpacing,
-//     required this.dripperDischarge,
-// });
-// class CalculationPages extends StatefulWidget {
-//   final String selectedCrop;
-//   final String selectedDuration;
-//   final DateTime selectedDate;
-//   final String selectedWettingArea;
-//   final String rowSpacing;
-//   final String cropSpacing;
-//   final String dripperDischarge;
-//
-//
-//   const CalculationPages({super.key,
-//     required this.selectedCrop,
-//     required this.selectedDuration,
-//     required this.selectedDate,
-//     required this.selectedWettingArea,
-//     required this.rowSpacing,
-//     required this.cropSpacing,
-//     required this.dripperDischarge,
-//   });
-//
-//   @override
-//   _CalculationPageState createState() => _CalculationPageState();
-// }
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+import 'CalculationPage.dart';
 
 class CropDetailsPage extends StatefulWidget {
   static const routeName = '/crop_details_page';
+  final String? greenKey;
+  final String? pan;
+
+  const CropDetailsPage({Key? key, required this.greenKey,this.pan}) : super(key: key);
+
   @override
   _CropDetailsPageState createState() => _CropDetailsPageState();
 }
@@ -52,26 +19,55 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   final TextEditingController _cropSpacingController = TextEditingController();
   final TextEditingController _rowSpacingController = TextEditingController();
   final TextEditingController _dripperDischargeController = TextEditingController();
-  final themeData = ThemeData(brightness: Brightness.light);
-
 
   String _selectedCrop = '--Select Variety--';
   String _selectedDuration = '--Select Duration--';
   String _selectedWettingArea = '--Select Area Wetting Percentage--';
-  List<String> cropDropDown = ['--Select Variety--', 'Tomato', 'Cucumber', 'Capsicum'];
+  List<String> cropDropDown = [
+    '--Select Variety--',
+    'Tomato',
+    'Cucumber',
+    'Capsicum'
+  ];
   List<String> durationDropDown = ['--Select Duration--', '90', '110', '150'];
-  List<String> areaDropDown = ['--Select Area Wetting Percentage--', '50', '70', '80'];
+  List<String> areaDropDown = [
+    '--Select Area Wetting Percentage--',
+    '50',
+    '70',
+    '80'
+  ];
 
   DateTime _selectedDate = DateTime.now();
-  String ?pan;
-  String pans = '0';
 
+
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFirebaseMessaging();
+  }
+
+  void _initializeFirebaseMessaging() async {
+    await FirebaseMessaging.instance.setAutoInitEnabled(true);
+    _firebaseMessaging.getToken().then((String? token) {
+      print('FCM Token: $token');
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      // Handle incoming messages when the app is in the foreground
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      // Handle when the app is opened from a background state
+    });
+    print("valueda:$pan");
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-
       backgroundColor: Colors.purple[900], // Dark purple background
       appBar: AppBar(
         backgroundColor: Colors.black26,
@@ -79,10 +75,12 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
         titleTextStyle: const TextStyle(color: Colors.white),
       ),
       body: SingleChildScrollView(
-
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          margin: EdgeInsets.symmetric(vertical: 50,horizontal: 50),
+          width: MediaQuery
+              .of(context)
+              .size
+              .width * 0.8,
+          margin: EdgeInsets.symmetric(vertical: 50, horizontal: 50),
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
             color: Colors.deepPurple[200], // Light purple background
@@ -156,7 +154,6 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: () {
-                  // Navigate to CalculationPage and pass crop details
                   fetchPanAndNavigateToCalculationPage();
                 },
                 child: const Text('Save'),
@@ -168,13 +165,11 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
     );
   }
 
-  Widget buildDropdownButton(
-      String labelText,
+  Widget buildDropdownButton(String labelText,
       String value,
       List<String> items,
       Function(String?) onChanged,
-      String hintText,
-      ) {
+      String hintText,) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -195,7 +190,8 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             }).toList(),
             hint: Text(hintText),
             isExpanded: true,
-            underline: const SizedBox(), // Remove the underline
+            underline: const SizedBox(),
+            // Remove the underline
             style: const TextStyle(color: Colors.black), // Text color
           ),
         ),
@@ -215,7 +211,8 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             _selectDate(context);
           },
           style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all(Colors.white), // Background color
+            backgroundColor: MaterialStateProperty.all(Colors.white),
+            // Background color
             shape: MaterialStateProperty.all(
               RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.0), // Rounded corners
@@ -247,11 +244,15 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
 
   void fetchPanAndNavigateToCalculationPage() async {
     try {
-      // Reference to the database
-      final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/Green3');
+      // Fetch FCM token
+      String? fcmToken = await _firebaseMessaging.getToken();
+      print('FCM Token: $fcmToken');
 
-      // Push data to Firebase
-      await ref.set({
+      // Reference to the database
+      final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/${widget.greenKey}');
+
+      // Prepare data to update
+      Map<String, dynamic> dataToUpdate = {
         'selectedCrop': _selectedCrop,
         'selectedDuration': _selectedDuration,
         'selectedDate': _selectedDate.toIso8601String(),
@@ -259,14 +260,23 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
         'rowSpacing': _rowSpacingController.text,
         'cropSpacing': _cropSpacingController.text,
         'dripperDischarge': _dripperDischargeController.text,
-      });
+      };
+
+      // Check if FCM token is available
+      if (fcmToken != null) {
+        dataToUpdate['fcmToken'] = fcmToken; // Add FCM token to the data
+      }
+
+      // Update data in Firebase
+      await ref.update(dataToUpdate);
 
       // Navigate to CalculationPage and pass crop details
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => CalculationPage(
-            pan: pans,
+            greenKey: widget.greenKey,
+            pan: widget.pan ?? "",
             selectedCrop: _selectedCrop,
             selectedDuration: _selectedDuration,
             selectedDate: _selectedDate,
@@ -279,6 +289,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       );
     } catch (error) {
       print('Failed to fetch pan: $error');
-    }}
-}
+    }
+  }
 
+}

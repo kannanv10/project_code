@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cupertino_http/cupertino_http.dart';
 import 'package:disposebag/disposebag.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart'
     show debugPrint, debugPrintSynchronously, kReleaseMode;
 import 'package:flutter/material.dart';
@@ -21,6 +22,11 @@ import 'package:node_auth/data/user_repository_imp.dart';
 import 'package:node_auth/domain/repositories/user_repository.dart';
 import 'package:rx_shared_preferences/rx_shared_preferences.dart';
 import 'package:http/http.dart' as http;
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +47,7 @@ void main() async {
 
   late final Func0<Future<void>> onUnauthorized;
   final authInterceptor =
-      AuthInterceptor(onUnauthorized: () => onUnauthorized());
+  AuthInterceptor(onUnauthorized: () => onUnauthorized());
 
   final simpleHttpClient = SimpleHttpClient(
     client: Platform.isIOS || Platform.isMacOS
@@ -76,12 +82,15 @@ void main() async {
   );
 
   await Firebase.initializeApp(
-      options: const FirebaseOptions(apiKey: 'AIzaSyDSSIBsrEztVBv4DiP8OTFJxh7F1degUNY',
+      options: const FirebaseOptions(
+          apiKey: 'AIzaSyDSSIBsrEztVBv4DiP8OTFJxh7F1degUNY',
           appId: '1:778925904779:android:4e7786eb5d68009a17158e',
           messagingSenderId: '778925904779',
-          projectId:'flutter-d8e01',
+          projectId: 'flutter-d8e01',
           databaseURL: 'https://flutter-d8e01-default-rtdb.firebaseio.com/')
   );
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
     Provider<UserRepository>.value(
@@ -89,6 +98,8 @@ void main() async {
       child: const MyApp(),
     ),
   );
+
+  _requestNotificationPermissions();
 }
 
 void _setupLoggers() {
@@ -96,9 +107,32 @@ void _setupLoggers() {
   DisposeBagConfigs.logger = kReleaseMode ? null : disposeBagDefaultLogger;
 
   RxSharedPreferencesConfigs.logger =
-      kReleaseMode ? null : const RxSharedPreferencesDefaultLogger();
+  kReleaseMode ? null : const RxSharedPreferencesDefaultLogger();
 
   debugPrint = kReleaseMode
       ? (String? message, {int? wrapWidth}) {}
       : debugPrintSynchronously;
+}
+
+void _requestNotificationPermissions() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Request permissions for iOS
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    print('User granted permission');
+  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
+    print('User granted provisional permission');
+  } else {
+    print('User declined or has not accepted permission');
+  }
 }

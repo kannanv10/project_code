@@ -14,6 +14,25 @@ var pan = '0';
 class GreenHouseDetailsPage extends StatefulWidget {
   @override
   _GreenHouseDetailsPageState createState() => _GreenHouseDetailsPageState();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
@@ -100,6 +119,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
           title: const Text('Select a Greenhouse device'),
 
           content: DropdownButton<String>(
+            hint: Text("--no devices selected--"),
             value: selectedGreenKey, // Set the selected value
             onChanged: (String? newValue) {
               setState(() {
@@ -137,13 +157,14 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
       if (data != null) {
         // If data is not null, check if it contains 'cropSpacing'
         if (data.containsKey('cropSpacing')) {
+
           // If 'cropSpacing' is present, assign values and navigate to CalculationPage
           assignValuesFromFirebase(data);
 
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CalculationPage(
+              builder: (context) => CalculationPage(greenKey: selectedGreenKey,
                 pan: pan,
                 cropSpacing: cropSpacing,
                 dripperDischarge: dripperDischarge,
@@ -154,18 +175,21 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
                 selectedWettingArea: selectedWettingArea,
               ),
             ),
+
           );
         } else {
         // If data is null, navigate to page 1
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CropDetailsPage(),
+            builder: (context) => CropDetailsPage(greenKey: selectedGreenKey,
+              pan: pan,),
           ),
         );
       }}}
     ).catchError((error) {
       print('Failed to fetch data: $error');
+
     });
   }
 
