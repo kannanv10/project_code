@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:node_auth/pages/crop_details_page.dart';
+import 'package:node_auth/pages/firstpage.dart';
 
 import '../common/ApiUtils.dart';
 import '../const/ApiConstants.dart';
@@ -34,7 +34,7 @@ class LoginApiService {
 
   void navigateDashboardPage(BuildContext context) async {
     await Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => const CropDetailsPage()));
+        MaterialPageRoute(builder: (context) => CropDetailsPage(greenKey: '')));
   }
 
 }
