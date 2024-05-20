@@ -65,6 +65,19 @@ class MyApp extends StatelessWidget {
           child: const CropDetailsPage(),
         );
       },
+      GreenHouseDetailsPage.routeName: (context) {
+        return BlocProvider<HomeBloc>(
+          initBloc: (context) {
+            final userRepository = context.get<UserRepository>();
+            return HomeBloc(
+              LogoutUseCase(userRepository),
+              GetAuthStateStreamUseCase(userRepository),
+              UploadImageUseCase(userRepository),
+            );
+          },
+          child: GreenHouseDetailsPage(),
+        );
+      },
       LoginPage.routeName: (context) {
         return BlocProvider<LoginBloc>(
           initBloc: (context) => LoginBloc(

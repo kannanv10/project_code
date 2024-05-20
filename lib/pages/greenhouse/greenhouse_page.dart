@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:node_auth/pages/greenhouse/greenhouse_details.dart';
 
 class GreenHouseDetailsPage extends StatefulWidget {
+  static const routeName = '/green_house_details_page';
   @override
   _GreenHouseDetailsPageState createState() => _GreenHouseDetailsPageState();
 }
