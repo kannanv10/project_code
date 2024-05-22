@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:node_auth/pages/greenhouse/greenhouse_details.dart';
 import 'package:node_auth/pages/firstpage.dart';
 import 'package:node_auth/pages/CalculationPage.dart';
+
+import '../login/login_page.dart';
 late String cropSpacing;
 late String dripperDischarge;
 late String rowSpacing;
@@ -13,27 +15,10 @@ late String selectedWettingArea;
 var pan = '0';
 class GreenHouseDetailsPage extends StatefulWidget {
   static const routeName = '/green_house_details_page';
+
+  const GreenHouseDetailsPage({super.key});
   @override
   _GreenHouseDetailsPageState createState() => _GreenHouseDetailsPageState();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
 
 class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
@@ -73,6 +58,34 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
         title: const Text('Welcome to Automated Irrigation System'),
         titleTextStyle: const TextStyle(fontSize: 19),
         backgroundColor: Colors.green[700],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                '',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  LoginPage.routeName,
+                      (_) => false,
+                );
+              },
+              child: const Text('Log Out'),
+            )
+          ],
+        ),
       ),
       backgroundColor: Colors.purple[50],
       body: Center(
@@ -120,7 +133,7 @@ class _GreenHouseDetailsPageState extends State<GreenHouseDetailsPage> {
           title: const Text('Select a Greenhouse device'),
 
           content: DropdownButton<String>(
-            hint: Text("--no devices selected--"),
+            hint: const Text("--no devices selected--"),
             value: selectedGreenKey, // Set the selected value
             onChanged: (String? newValue) {
               setState(() {

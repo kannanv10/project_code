@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
       Navigator.defaultRouteName: (context) {
         return Provider<GetAuthStateUseCase>.factory(
           (context) => GetAuthStateUseCase(context.get()),
-          child: GreenHouseDetailsPage(),
+          child: const GreenHouseDetailsPage(),
         );
       },
       RegisterPage.routeName: (context) {
@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
               UploadImageUseCase(userRepository),
             );
           },
-          child:  CropDetailsPage(greenKey: '',),
+          child:  const CropDetailsPage(greenKey: '',),
         );
       },
       GreenHouseDetailsPage.routeName: (context) {
@@ -75,7 +75,7 @@ class MyApp extends StatelessWidget {
               UploadImageUseCase(userRepository),
             );
           },
-          child: GreenHouseDetailsPage(),
+          child: const GreenHouseDetailsPage(),
         );
       },
       LoginPage.routeName: (context) {

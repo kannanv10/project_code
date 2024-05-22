@@ -12,6 +12,8 @@ import 'package:node_auth/pages/login/login.dart';
 import 'package:node_auth/utils/snackbar.dart';
 import 'package:rxdart_ext/rxdart_ext.dart';
 
+import '../../domain/models/app_error.dart';
+
 class HomePage extends StatefulWidget {
   static const routeName = '/home_page';
 
@@ -188,4 +190,5 @@ class _HomePageState extends State<HomePage>
       backgroundColor: Theme.of(context).canvasColor,
     );
   }
+
 }
