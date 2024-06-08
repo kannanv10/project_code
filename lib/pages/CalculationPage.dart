@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
+
 import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 
 
@@ -14,12 +15,12 @@ late DateTime scheduledIrrigationTime;
 Timer? irrigationTimer;
 Timer? operationTimeTimer;
 bool isMotorOn = false;
+String selectedWettingArea = '8';
 
 class CalculationPage extends StatefulWidget {
   final String selectedCrop;
   final String selectedDuration;
   final DateTime selectedDate;
-  final String selectedWettingArea;
   final String rowSpacing;
   final String cropSpacing;
   final String dripperDischarge;
@@ -31,7 +32,6 @@ class CalculationPage extends StatefulWidget {
     required this.selectedCrop,
     required this.selectedDuration,
     required this.selectedDate,
-    required this.selectedWettingArea,
     required this.rowSpacing,
     required this.cropSpacing,
     required this.dripperDischarge,
@@ -87,12 +87,21 @@ class _CalculationPageState extends State<CalculationPage>
         kcMid = 0.7;
         kcFinal = 1.0;
         break;
+      case 'String bean':
+        kcInitial = 0.45;
+        kcMid = 1.01;
+        kcFinal = 0.39;
+        break;
+      case 'Cauliflower':
+        kcInitial = 0.65;
+        kcMid = 1.05;
+        kcFinal = 0.95;
+        break;
     }
 
     DateTime currentDate = DateTime.now();
-    int daysAfterSowing = currentDate
-        .difference(widget.selectedDate)
-        .inDays;
+    int daysAfterSowing =
+        currentDate.difference(widget.selectedDate).inDays;
     growthPercentage =
         (daysAfterSowing / int.parse(widget.selectedDuration)) * 100;
 
@@ -106,15 +115,11 @@ class _CalculationPageState extends State<CalculationPage>
     }
 
     panValue = double.parse(widget.pan);
-    print('object:$panValue');
-
     double etc = kc * panValue;
 
     double result = etc *
-        int.parse(widget.cropSpacing) *
-        int.parse(widget.rowSpacing) *
-        int.parse(widget.selectedWettingArea) *
-        (0.00001) *
+        (3.14 * int.parse(widget.rowSpacing) * int.parse(widget.rowSpacing)) *
+        (0.0001) *
         (60) /
         int.parse(widget.dripperDischarge);
 
@@ -122,7 +127,6 @@ class _CalculationPageState extends State<CalculationPage>
     setState(() {
       display = result.toStringAsFixed(0);
     });
-
 
     if (isIrrigationMotorOn && display != null) {
       startIrrigationTimer(double.parse(display!));
@@ -134,15 +138,17 @@ class _CalculationPageState extends State<CalculationPage>
 
   void startScheduledIrrigation() {
     DateTime currentTime = DateTime.now();
-    Duration timeUntilScheduled = scheduledIrrigationTime.difference(
-        currentTime);
+    Duration timeUntilScheduled = scheduledIrrigationTime.difference(currentTime);
 
     if (timeUntilScheduled.inSeconds > 0) {
       Timer(timeUntilScheduled, () {
         setState(() {
           isMotorOn = true;
         });
-        startOperationTimeCountdown();
+        updateMotorStatusToFirebase("On");
+        if (display != null) {
+          startIrrigationTimer(double.parse(display!));
+        }
       });
     }
   }
@@ -151,7 +157,9 @@ class _CalculationPageState extends State<CalculationPage>
     operationTimeTimer = Timer(Duration(minutes: int.parse(display!)), () {
       setState(() {
         isMotorOn = false;
+        isIrrigationMotorOn = false;
       });
+      updateMotorStatusToFirebase("Off");
     });
   }
 
@@ -175,6 +183,8 @@ class _CalculationPageState extends State<CalculationPage>
         scheduledIrrigationTime = scheduledTime;
         isIrrigationScheduled = true;
       });
+
+      startScheduledIrrigation();
     }
   }
 
@@ -182,28 +192,17 @@ class _CalculationPageState extends State<CalculationPage>
     irrigationTimer = Timer(Duration(minutes: durationInMinutes.toInt()), () {
       setState(() {
         isMotorOn = false;
-        databaseReference.child(
-            "user/1@gmail/greenhouseDetails/${widget.greenKey}").update({
-          "Motor status": "Off",
-        });
+        isIrrigationMotorOn = false;
       });
-
-      databaseReference.child(
-          "user/1@gmail/greenhouseDetails/${widget.greenKey}").update({
-        "Motor status": "Off",
-        "Operation time": durationInMinutes.toString(),
-      });
+      updateMotorStatusToFirebase("Off");
     });
 
     setState(() {
       isMotorOn = true;
-      databaseReference.child(
-          "user/1@gmail/greenhouseDetails/${widget.greenKey}").update({
-        "Motor status": "On",
-      });
+      isIrrigationMotorOn = true;
     });
+    updateMotorStatusToFirebase("On");
   }
-
 
   void irrigateTomorrow(BuildContext context) {
     showDialog(
@@ -229,9 +228,9 @@ class _CalculationPageState extends State<CalculationPage>
     Duration timeUntil730AM = DateTime(
       currentTime.year,
       currentTime.month,
-      currentTime.day,
-      09,
-      53,
+      currentTime.day +1 ,
+      07,
+      59,
     ).difference(currentTime);
 
     Timer(timeUntil730AM, () {
@@ -268,14 +267,23 @@ class _CalculationPageState extends State<CalculationPage>
         kcMid = 0.7;
         kcFinal = 1.0;
         break;
+      case 'String bean':
+        kcInitial = 0.45;
+        kcMid = 1.01;
+        kcFinal = 0.39;
+        break;
+      case 'Cauliflower':
+        kcInitial = 0.65;
+        kcMid = 1.05;
+        kcFinal = 0.95;
+        break;
     }
 
     double panValue = double.parse(widget.pan);
 
     DateTime currentDate = DateTime.now();
-    int daysAfterSowing = currentDate
-        .difference(widget.selectedDate)
-        .inDays;
+    int daysAfterSowing =
+        currentDate.difference(widget.selectedDate).inDays;
     growthPercentage =
         (daysAfterSowing / int.parse(widget.selectedDuration)) * 100;
 
@@ -291,16 +299,26 @@ class _CalculationPageState extends State<CalculationPage>
     double etc = kc * modPan;
 
     double result = etc *
-        int.parse(widget.cropSpacing) *
-        int.parse(widget.rowSpacing) *
-        int.parse(widget.selectedWettingArea) *
-        (0.00001) *
+        (3.14 * int.parse(widget.rowSpacing) * int.parse(widget.rowSpacing)) *
+        (0.0001) *
         (60) /
         int.parse(widget.dripperDischarge);
 
     namecontroller.text = result.toString();
     setState(() {
       display = result.toStringAsFixed(0);
+    });
+  }
+
+  void updateMotorStatusToFirebase(String status) {
+    databaseReference
+        .child("user/1@gmail/greenhouseDetails/${widget.greenKey}")
+        .update({
+      "Motor status": status,
+    }).then((_) {
+      print("Motor status updated successfully: $status");
+    }).catchError((error) {
+      print("Failed to update motor status: $error");
     });
   }
 
@@ -337,9 +355,8 @@ class _CalculationPageState extends State<CalculationPage>
         .once()
         .then((snapshot) {
       // Retrieve current data
-      Map<dynamic, dynamic>? currentData = snapshot.snapshot.value as Map<
-          dynamic,
-          dynamic>?;
+      Map<dynamic, dynamic>? currentData =
+      snapshot.snapshot.value as Map<dynamic, dynamic>?;
 
       if (currentData != null) {
         // Keep only the pan data
@@ -353,8 +370,7 @@ class _CalculationPageState extends State<CalculationPage>
           print("Crop data reset successfully");
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) =>
-                GreenHouseDetailsPage()), // Replace GreenHouseDetailsPage with your actual page name
+            MaterialPageRoute(builder: (context) => GreenHouseDetailsPage()),
           );
         }).catchError((error) {
           print("Failed to reset crop data: $error");
@@ -363,15 +379,13 @@ class _CalculationPageState extends State<CalculationPage>
         print("No data found to reset");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) =>
-              GreenHouseDetailsPage()), // Replace GreenHouseDetailsPage with your actual page name
+          MaterialPageRoute(builder: (context) => GreenHouseDetailsPage()),
         );
       }
     }).catchError((error) {
       print("Failed to fetch current crop data: $error");
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -411,10 +425,7 @@ class _CalculationPageState extends State<CalculationPage>
                   ),
                 ),
                 const SizedBox(height: 10),
-                // Container to display crop growth progress text and linear progress indicator
                 Container(
-
-
                   margin: const EdgeInsets.symmetric(vertical: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -457,9 +468,7 @@ class _CalculationPageState extends State<CalculationPage>
                     ],
                   ),
                 ),
-                // const SizedBox(height: 20),
-
-                const SizedBox(height: 30),
+                const SizedBox(height: 2),
                 Container(
                   padding: const EdgeInsets.all(10.0),
                   decoration: BoxDecoration(
@@ -476,40 +485,56 @@ class _CalculationPageState extends State<CalculationPage>
                   ),
                   child: Text(
                     'Operation Time: ${display ?? ""} minutes',
-                    style: const TextStyle(fontSize: 18, color: Colors.white),
+                    style: const TextStyle(
+                        fontSize: 18, color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
                 ListView.builder(
                   shrinkWrap: true,
-                  itemCount: 3,
+                  itemCount: 4, // Increased count by 1 for manual run tile
                   itemBuilder: (BuildContext context, int index) {
                     IconData? icon;
+                    String textstyle;
                     String text;
                     Function()? onPressed;
                     Color? tileColor;
 
                     switch (index) {
                       case 0:
-                        text = '1. Irrigation Motor';
+                        text = ' Irrigation Motor';
+
                         tileColor = isMotorOn ? Colors.green : Colors.red;
                         onPressed = () {
                           setState(() {
                             isMotorOn = !isMotorOn;
+                            if (isMotorOn) {
+                              startIrrigationTimer(double.parse(display!));
+                            } else {
+                              startOperationTimeCountdown();
+                            }
                           });
+                          updateMotorStatusToFirebase(isMotorOn ? "On" : "Off");
                         };
                         tileColor = Colors.green[300];
                         break;
                       case 1:
+                        text = ' Schedule Irrigation';
                         icon = Icons.schedule;
-                        text = '2. Schedule Irrigation';
+
                         onPressed = () => scheduleIrrigation(context);
                         tileColor = Colors.green[300];
                         break;
                       case 2:
+                        text = ' Irrigate Tomorrow';
                         icon = Icons.message;
-                        text = '3. Irrigate Tomorrow';
                         onPressed = () => irrigateTomorrow(context);
+                        tileColor = Colors.green[300];
+                        break;
+                      case 3: // Manual Run Tile
+                        text = 'Manual Run';
+                        icon = Icons.add;
+                        onPressed = () => _manualRun(context);
                         tileColor = Colors.green[300];
                         break;
                       default:
@@ -523,8 +548,8 @@ class _CalculationPageState extends State<CalculationPage>
                         elevation: 3,
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         color: tileColor,
-                        child: SizedBox( // Ensure all tiles are equally sized
-                          height: 60, // Set the desired height for the tiles
+                        child: SizedBox(
+                          height: 60,
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -532,7 +557,10 @@ class _CalculationPageState extends State<CalculationPage>
                                 Expanded(
                                   child: Text(
                                     text,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black54),
                                   ),
                                 ),
                                 if (icon != null) ...[
@@ -544,18 +572,20 @@ class _CalculationPageState extends State<CalculationPage>
                                 ],
                                 if (index == 0) ...[
                                   Switch(
-                                    value: isMotorOn, // Change isIrrigationMotorOn to isMotorOn
+                                    value: isMotorOn,
                                     onChanged: (value) {
                                       setState(() {
                                         isMotorOn = value;
                                         if (value) {
-                                          startIrrigationTimer(double.parse(display!)); // Start timer when motor is turned on
+                                          startIrrigationTimer(double.parse(display!));
                                         } else {
-                                          startOperationTimeCountdown(); // Start countdown when motor is turned off
+                                          startOperationTimeCountdown();
                                         }
                                       });
+                                      updateMotorStatusToFirebase(
+                                          isMotorOn ? "On" : "Off");
                                     },
-                                    activeColor: Colors.green,
+                                    activeColor: Colors.red,
                                   ),
                                 ],
                               ],
@@ -566,13 +596,7 @@ class _CalculationPageState extends State<CalculationPage>
                     );
                   },
                 ),
-
-
-
-
-
-
-                const SizedBox(height: 50),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
                     _showResetConfirmationDialog(context);
@@ -588,7 +612,6 @@ class _CalculationPageState extends State<CalculationPage>
                     children: [
                       const Icon(Icons.restore, color: Colors.white),
                       const SizedBox(width: 8),
-                      // Adjust spacing between icon and text
                       Text(
                         'Reset Data',
                         style: const TextStyle(
@@ -605,7 +628,73 @@ class _CalculationPageState extends State<CalculationPage>
     );
   }
 
+  void _manualRun(BuildContext context) async {
+    int selectedDuration = 5; // Default duration
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Select Duration'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text('Select the duration for manual run:'),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            if (selectedDuration > 1) {
+                              selectedDuration--;
+                            }
+                          });
+                        },
+                        icon: Icon(Icons.remove),
+                      ),
+                      Text('$selectedDuration minutes'),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedDuration++;
+                          });
+                        },
+                        icon: Icon(Icons.add),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    startIrrigationTimer(selectedDuration.toDouble());
+                  },
+                  child: Text('Start'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
 }
+
 
 // import 'package:flutter/material.dart';
 // import 'package:firebase_database/firebase_database.dart';

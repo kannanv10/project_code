@@ -18,7 +18,7 @@ dependencies:
   cupertino_http: ^1.2.0
   meta: ^1.8.0
   path: ^1.8.2
-  http: ^0.13.5
+  http: ^0.13.3
   built_value: ^8.4.2
   tuple: ^2.0.1
   rxdart: ^0.27.7
@@ -43,6 +43,9 @@ dependencies:
   http_interceptor: ^1.0.2
   firebase_core: ^2.30.0
   firebase_analytics: ^10.10.5
+  intl: ^0.17.0
+  googleapis: ^13.1.0
+  googleapis_auth: ^1.4.0
 
 dev_dependencies:
   plugin_platform_interface: ^2.1.3
