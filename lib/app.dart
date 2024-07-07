@@ -27,8 +27,8 @@ class MyApp extends StatelessWidget {
     final routes = <String, WidgetBuilder>{
       Navigator.defaultRouteName: (context) {
         return Provider<GetAuthStateUseCase>.factory(
-          (context) => GetAuthStateUseCase(context.get()),
-          child: const GreenHouseDetailsPage(),
+              (context) => GetAuthStateUseCase(context.get()),
+          child: const Home(),
         );
       },
       RegisterPage.routeName: (context) {
@@ -120,6 +120,7 @@ class _HomeState extends State<Home> with DisposeBagMixin {
 
   @override
   void initState() {
+    print('_HomeState');
     super.initState();
 
     final getAuthState = Provider.of<GetAuthStateUseCase>(context);
@@ -163,9 +164,8 @@ class _HomeState extends State<Home> with DisposeBagMixin {
 
             if (authState is AuthenticatedState) {
               debugPrint('[HOME] home [4] >> [Authenticated]');
-              return routes[HomePage.routeName]!(context);
+              return routes[GreenHouseDetailsPage.routeName]!(context);
             }
-
             throw StateError('Unknown auth state: $authState');
           },
         );
