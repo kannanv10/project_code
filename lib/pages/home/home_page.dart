@@ -12,6 +12,8 @@ import 'package:node_auth/pages/login/login.dart';
 import 'package:node_auth/utils/snackbar.dart';
 import 'package:rxdart_ext/rxdart_ext.dart';
 
+import '../../domain/models/app_error.dart';
+
 class HomePage extends StatefulWidget {
   static const routeName = '/home_page';
 
@@ -86,7 +88,7 @@ class _HomePageState extends State<HomePage>
                 label: const Text('Change password'),
                 icon: const Icon(Icons.lock_outline),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).backgroundColor,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                 ),
               ),
             ),
@@ -99,7 +101,7 @@ class _HomePageState extends State<HomePage>
                 label: const Text('Logout'),
                 icon: const Icon(Icons.exit_to_app),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).backgroundColor,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
                 ),
               ),
             ),
@@ -111,7 +113,7 @@ class _HomePageState extends State<HomePage>
                   'Flutter auth BLoC pattern RxDart',
                   style: Theme.of(context)
                       .textTheme
-                      .subtitle1!
+                      .titleSmall!
                       .copyWith(fontSize: 16),
                 ),
               ),
@@ -188,4 +190,5 @@ class _HomePageState extends State<HomePage>
       backgroundColor: Theme.of(context).canvasColor,
     );
   }
+
 }
