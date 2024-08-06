@@ -52,7 +52,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("$label:"),
-        SizedBox(height: 3),
+        const SizedBox(height: 3),
         Row(
           children: [
             Container(
@@ -77,12 +77,12 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
                     border: InputBorder.none, // Remove default border
                     contentPadding: EdgeInsets.zero,
                   ),
-                  style: TextStyle(fontSize: 14.0),
+                  style: const TextStyle(fontSize: 14.0),
                 ),
               ),
             ),
-            SizedBox(width: 5),
-            Text(unit, style: TextStyle(fontSize: 16.0)),
+            const SizedBox(width: 5),
+            Text(unit, style: const TextStyle(fontSize: 16.0)),
           ],
         ),
         if (errorText != null)
@@ -90,7 +90,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             padding: const EdgeInsets.only(top: 5.0),
             child: Text(
               errorText,
-              style: TextStyle(color: Colors.red, fontSize: 12.0),
+              style: const TextStyle(color: Colors.red, fontSize: 12.0),
             ),
           ),
       ],
@@ -163,7 +163,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       body: SingleChildScrollView(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
-          margin: EdgeInsets.symmetric(vertical: 50, horizontal: 50),
+          margin: const EdgeInsets.symmetric(vertical: 50, horizontal: 50),
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
             color: Colors.deepPurple[200], // Light purple background
@@ -284,7 +284,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             padding: const EdgeInsets.only(top: 5.0),
             child: Text(
               errorText,
-              style: TextStyle(color: Colors.red, fontSize: 12.0),
+              style: const TextStyle(color: Colors.red, fontSize: 12.0),
             ),
           ),
       ],
@@ -319,7 +319,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             padding: const EdgeInsets.only(top: 5.0),
             child: Text(
               errorText,
-              style: TextStyle(color: Colors.red, fontSize: 12.0),
+              style: const TextStyle(color: Colors.red, fontSize: 12.0),
             ),
           ),
       ],
