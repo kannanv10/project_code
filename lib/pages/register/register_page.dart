@@ -79,7 +79,9 @@ class _RegisterPageState extends State<RegisterPage>
     final registerBloc = BlocProvider.of<RegisterBloc>(context);
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Container(
+
         decoration: BoxDecoration(
           image: DecorationImage(
             image: const AssetImage('assets/bg.jpg'),
@@ -224,13 +226,14 @@ class _RegisterPageState extends State<RegisterPage>
                 : const Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2.0,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey),
                     ),
                   ),
           ),
         );
       },
       child: MaterialButton(
+
         onPressed: () {
           FocusScope.of(context).unfocus();
           registerBloc.submitRegister();
@@ -240,7 +243,7 @@ class _RegisterPageState extends State<RegisterPage>
         child: const Text(
           'REGISTER',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.green,
             fontSize: 16.0,
           ),
         ),

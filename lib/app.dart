@@ -19,157 +19,257 @@ import 'package:node_auth/pages/register/register.dart';
 import 'package:node_auth/pages/reset_password/reset_password_page.dart';
 import 'package:node_auth/utils/streams.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc_pattern/flutter_bloc_pattern.dart'; // Update the import for BlocProvider
+import 'package:node_auth/pages/greenhouse/greenhouse_details.dart';
+import 'package:node_auth/pages/login/login.dart';
+import 'package:node_auth/pages/register/register.dart';
+import 'package:node_auth/pages/reset_password/reset_password_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    final routes = <String, WidgetBuilder>{
-      Navigator.defaultRouteName: (context) {
-        return Provider<GetAuthStateUseCase>.factory(
-              (context) => GetAuthStateUseCase(context.get()),
-          child: const CropDetailsPage(greenKey: '',),
-        );
-      },
-      RegisterPage.routeName: (context) {
-        return BlocProvider<RegisterBloc>(
-          initBloc: (context) => RegisterBloc(
-            RegisterUseCase(context.get()),
-          ),
-          child: const RegisterPage(),
-        );
-      },
-      HomePage.routeName: (context) {
-        return BlocProvider<HomeBloc>(
-          initBloc: (context) {
-            final userRepository = context.get<UserRepository>();
-            return HomeBloc(
-              LogoutUseCase(userRepository),
-              GetAuthStateStreamUseCase(userRepository),
-              UploadImageUseCase(userRepository),
-            );
-          },
-          child: const HomePage(),
-        );
-      },
-      CropDetailsPage.routeName: (context) {
-        return BlocProvider<HomeBloc>(
-          initBloc: (context) {
-            final userRepository = context.get<UserRepository>();
-            return HomeBloc(
-              LogoutUseCase(userRepository),
-              GetAuthStateStreamUseCase(userRepository),
-              UploadImageUseCase(userRepository),
-            );
-          },
-          child:  const CropDetailsPage(greenKey: '',),
-        );
-      },
-      GreenHouseDetailsPage.routeName: (context) {
-        return BlocProvider<HomeBloc>(
-          initBloc: (context) {
-            final userRepository = context.get<UserRepository>();
-            return HomeBloc(
-              LogoutUseCase(userRepository),
-              GetAuthStateStreamUseCase(userRepository),
-              UploadImageUseCase(userRepository),
-            );
-          },
-          child: const GreenHouseDetailsPage(),
-        );
-      },
-      LoginPage.routeName: (context) {
-        return BlocProvider<LoginBloc>(
-          initBloc: (context) => LoginBloc(
-            LoginUseCase(context.get()),
-          ),
-          child: const LoginPage(),
-        );
-      },
-      ResetPasswordPage.routeName: (context) {
-        return const ResetPasswordPage();
-      },
-    };
-
-    final themeData = ThemeData(brightness: Brightness.light);
-    return Provider<Map<String, WidgetBuilder>>.value(
-      routes,
-      child: MaterialApp(
-        title: 'Flutter Demo',
-        theme: themeData.copyWith(
-          colorScheme: themeData.colorScheme.copyWith(
-            secondary: const Color(0xFF00e676),
-          ),
-        ),
-        routes: routes,
-        debugShowCheckedModeBanner: false,
-      ),
-    );
-  }
-}
-
-class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
-
-  @override
-  State<Home> createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> with DisposeBagMixin {
-  late final StateStream<Result<AuthenticationState>?> authState$;
-
-  @override
-  void initState() {
-    print('_HomeState');
-    super.initState();
-
-    final getAuthState = Provider.of<GetAuthStateUseCase>(context);
-    authState$ = getAuthState().castAsNullable().publishState(null)
-      ..connect().disposedBy(bag);
+  Future<String?> _getInitialRoute() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('userEmail');
+    if (userEmail != null) {
+      return GreenHouseDetailsPage.routeName;
+    } else {
+      return LoginPage.routeName;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final routes = Provider.of<Map<String, WidgetBuilder>>(context);
-
-    return RxStreamBuilder<Result<AuthenticationState>?>(
-      stream: authState$,
-      builder: (context, result) {
-        if (result == null) {
-          debugPrint('[HOME] home [1] >> [waiting...]');
-
-          return Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Theme.of(context).cardColor,
-            child: const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Colors.white),
-              ),
-            ),
-          );
+    return FutureBuilder<String?>(
+      future: _getInitialRoute(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const CircularProgressIndicator();
         }
+        final initialRoute = snapshot.data!;
 
-        return result.fold(
-          ifLeft: (appError) {
-            debugPrint(
-                '[HOME] home [2] >> [error -> NotAuthenticated] error=$appError');
-            return routes[LoginPage.routeName]!(context);
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.dark(
+              primary: Colors.green,
+              secondary: Colors.blueAccent,
+            ),
+          ),
+          initialRoute: initialRoute,
+          routes: {
+            LoginPage.routeName: (context) {
+              return BlocProvider<LoginBloc>(
+                initBloc: (context) => LoginBloc(
+                  LoginUseCase(context.get()), // Make sure this is properly initialized
+                ),
+                child: const LoginPage(),
+              );
+            },
+            RegisterPage.routeName: (context) => BlocProvider<RegisterBloc>(
+              initBloc: (context) => RegisterBloc(
+                RegisterUseCase(context.get()), // Ensure this use case is properly provided
+              ),
+              child: const RegisterPage(),
+            ),
+            ResetPasswordPage.routeName: (context) => const ResetPasswordPage(),
+            GreenHouseDetailsPage.routeName: (context) => BlocProvider<HomeBloc>(
+              initBloc: (context) {
+                final userRepository = context.get<UserRepository>();
+                return HomeBloc(
+                  LogoutUseCase(userRepository),
+                  GetAuthStateStreamUseCase(userRepository),
+                  UploadImageUseCase(userRepository),
+                );
+              },
+              child: const GreenHouseDetailsPage(),
+            ),
           },
-          ifRight: (authState) {
-            if (authState is UnauthenticatedState) {
-              debugPrint('[HOME] home [3] >> [Unauthenticated]');
-              return routes[LoginPage.routeName]!(context);
-            }
-
-            if (authState is AuthenticatedState) {
-              debugPrint('[HOME] home [4] >> [Authenticated]');
-              return routes[GreenHouseDetailsPage.routeName]!(context);
-            }
-            throw StateError('Unknown auth state: $authState');
-          },
+          debugShowCheckedModeBanner: false,
         );
       },
     );
   }
 }
+
+
+//
+// import 'package:flutter/material.dart';
+// import 'package:flutter_bloc_pattern/flutter_bloc_pattern.dart';
+// import 'package:flutter_disposebag/flutter_disposebag.dart';
+// import 'package:flutter_provider/flutter_provider.dart';
+// import 'package:node_auth/domain/models/app_error.dart';
+// import 'package:node_auth/domain/models/auth_state.dart';
+// import 'package:node_auth/domain/repositories/user_repository.dart';
+// import 'package:node_auth/domain/usecases/get_auth_state_stream_use_case.dart';
+// import 'package:node_auth/domain/usecases/get_auth_state_use_case.dart';
+// import 'package:node_auth/domain/usecases/login_use_case.dart';
+// import 'package:node_auth/domain/usecases/logout_use_case.dart';
+// import 'package:node_auth/domain/usecases/register_use_case.dart';
+// import 'package:node_auth/domain/usecases/upload_image_use_case.dart';
+// import 'package:node_auth/pages/firstpage.dart';
+// import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+// import 'package:node_auth/pages/home/home.dart';
+// import 'package:node_auth/pages/login/login.dart';
+// import 'package:node_auth/pages/register/register.dart';
+// import 'package:node_auth/pages/reset_password/reset_password_page.dart';
+// import 'package:node_auth/utils/streams.dart';
+//
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final routes = <String, WidgetBuilder>{
+//       Navigator.defaultRouteName: (context) {
+//         return Provider<GetAuthStateUseCase>.factory(
+//               (context) => GetAuthStateUseCase(context.get()),
+//           child: const LoginPage(), // Set LoginPage as the initial route
+//         );
+//       },
+//       RegisterPage.routeName: (context) {
+//         return BlocProvider<RegisterBloc>(
+//           initBloc: (context) => RegisterBloc(
+//             RegisterUseCase(context.get()),
+//           ),
+//           child: const RegisterPage(),
+//         );
+//       },
+//       HomePage.routeName: (context) {
+//         return BlocProvider<HomeBloc>(
+//           initBloc: (context) {
+//             final userRepository = context.get<UserRepository>();
+//             return HomeBloc(
+//               LogoutUseCase(userRepository),
+//               GetAuthStateStreamUseCase(userRepository),
+//               UploadImageUseCase(userRepository),
+//             );
+//           },
+//           child: const HomePage(),
+//         );
+//       },
+//       CropDetailsPage.routeName: (context) {
+//         return BlocProvider<HomeBloc>(
+//           initBloc: (context) {
+//             final userRepository = context.get<UserRepository>();
+//             return HomeBloc(
+//               LogoutUseCase(userRepository),
+//               GetAuthStateStreamUseCase(userRepository),
+//               UploadImageUseCase(userRepository),
+//             );
+//           },
+//           child:  const CropDetailsPage(greenKey: '',),
+//         );
+//       },
+//       GreenHouseDetailsPage.routeName: (context) {
+//         return BlocProvider<HomeBloc>(
+//           initBloc: (context) {
+//             final userRepository = context.get<UserRepository>();
+//             return HomeBloc(
+//               LogoutUseCase(userRepository),
+//               GetAuthStateStreamUseCase(userRepository),
+//               UploadImageUseCase(userRepository),
+//             );
+//           },
+//           child: const GreenHouseDetailsPage(),
+//         );
+//       },
+//       LoginPage.routeName: (context) {
+//         return BlocProvider<LoginBloc>(
+//           initBloc: (context) => LoginBloc(
+//             LoginUseCase(context.get()),
+//           ),
+//           child: const LoginPage(),
+//         );
+//       },
+//       ResetPasswordPage.routeName: (context) {
+//         return const ResetPasswordPage();
+//       },
+//     };
+//
+//     final themeData = ThemeData(brightness: Brightness.dark);
+//     return Provider<Map<String, WidgetBuilder>>.value(
+//       routes,
+//       child: MaterialApp(
+//         title: 'Flutter Demo',
+//         theme: themeData.copyWith(
+//           colorScheme: themeData.colorScheme.copyWith(
+//             secondary: const Color(0xFF00e676),
+//           ),
+//         ),
+//         initialRoute: LoginPage.routeName, // Set initial route
+//         routes: routes,
+//         debugShowCheckedModeBanner: false,
+//       ),
+//     );
+//   }
+// }
+//
+// class Home extends StatefulWidget {
+//   const Home({Key? key}) : super(key: key);
+//
+//   @override
+//   State<Home> createState() => _HomeState();
+// }
+//
+// class _HomeState extends State<Home> with DisposeBagMixin {
+//   late final StateStream<Result<AuthenticationState>?> authState$;
+//
+//   @override
+//   void initState() {
+//     print('_HomeState');
+//     super.initState();
+//
+//     final getAuthState = Provider.of<GetAuthStateUseCase>(context);
+//     authState$ = getAuthState().castAsNullable().publishState(null)
+//       ..connect().disposedBy(bag);
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final routes = Provider.of<Map<String, WidgetBuilder>>(context);
+//
+//     return RxStreamBuilder<Result<AuthenticationState>?>(
+//       stream: authState$,
+//       builder: (context, result) {
+//         if (result == null) {
+//           debugPrint('[HOME] home [1] >> [waiting...]');
+//
+//           return Container(
+//             width: double.infinity,
+//             height: double.infinity,
+//             color: Theme.of(context).cardColor,
+//             child: const Center(
+//               child: CircularProgressIndicator(
+//                 valueColor: AlwaysStoppedAnimation(Colors.white),
+//               ),
+//             ),
+//           );
+//         }
+//
+//         return result.fold(
+//           ifLeft: (appError) {
+//             debugPrint(
+//                 '[HOME] home [2] >> [error -> NotAuthenticated] error=$appError');
+//             return routes[LoginPage.routeName]!(context);
+//           },
+//           ifRight: (authState) {
+//             if (authState is UnauthenticatedState) {
+//               debugPrint('[HOME] home [3] >> [Unauthenticated]');
+//               return routes[LoginPage.routeName]!(context);
+//             }
+//
+//             if (authState is AuthenticatedState) {
+//               debugPrint('[HOME] home [4] >> [Authenticated]');
+//               return routes[GreenHouseDetailsPage.routeName]!(context);
+//             }
+//             throw StateError('Unknown auth state: $authState');
+//           },
+//         );
+//       },
+//     );
+//   }
+// }

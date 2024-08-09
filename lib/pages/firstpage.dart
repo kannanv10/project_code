@@ -63,7 +63,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
                 color: Colors.white, // Textbox background color
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 2.0),
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
@@ -229,8 +229,8 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
               // ),
               const SizedBox(height: 20.0),
               buildLabeledNumericTextField('Row Spacing', _rowSpacingController, _rowSpacingError, 'cm'),
-              const SizedBox(height: 20.0),
-              buildLabeledNumericTextField('Crop Spacing', _cropSpacingController, _cropSpacingError, 'cm'),
+              //const SizedBox(height: 20.0),
+              //buildLabeledNumericTextField('Crop Spacing', _cropSpacingController, _cropSpacingError, 'cm'),
               const SizedBox(height: 20.0),
               buildLabeledNumericTextField('Dripper Discharge', _dripperDischargeController, _dripperDischargeError, 'Lph'),
 
