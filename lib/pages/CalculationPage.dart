@@ -3,6 +3,8 @@ import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 
 import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+import 'package:node_auth/pages/login/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 final databaseReference = FirebaseDatabase.instance.reference();
@@ -16,8 +18,15 @@ Timer? irrigationTimer;
 Timer? operationTimeTimer;
 bool isMotorOn = false;
 String selectedWettingArea = '8';
+String? userEmail;
+String formatEmail(String email) {
+  // Replace '@' and '.' with '_'
+  return email.replaceAll('@', '_').replaceAll('.', '_');
+}
 
 class CalculationPage extends StatefulWidget {
+
+
   final String selectedCrop;
   final String selectedDuration;
   final DateTime selectedDate;
@@ -393,6 +402,49 @@ class _CalculationPageState extends State<CalculationPage>
       appBar: AppBar(
         title: const Text('Calculation Page'),
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                '',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  LoginPage.routeName,
+                      (_) => false,
+                );
+              },
+              child: const Text('Log Out'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                clearUserData(context);
+              },
+              child: const Text('Delete Account'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Set the button color to red
+              ),
+            ),
+            if (userEmail != null)
+              Text(
+                'User email: ${formatEmail(userEmail!)}', // Display the formatted email
+                style: const TextStyle(fontSize: 16.0, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         child: Center(
           child: Container(
@@ -622,6 +674,15 @@ class _CalculationPageState extends State<CalculationPage>
     );
   }
 
+  void clearUserData(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    print('All shared preferences cleared');
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      LoginPage.routeName,
+          (_) => false,
+    );
+  }
   void _manualRun(BuildContext context) async {
     int selectedDuration = 5; // Default duration
 

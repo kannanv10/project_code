@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+import 'package:node_auth/pages/login/login_page.dart';
+import 'package:rx_shared_preferences/rx_shared_preferences.dart';
 import 'CalculationPage.dart';
 
 class CropDetailsPage extends StatefulWidget {
@@ -21,6 +23,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   final TextEditingController _cropSpacingController = TextEditingController();
   final TextEditingController _rowSpacingController = TextEditingController();
   final TextEditingController _dripperDischargeController = TextEditingController();
+  String? userEmail;
 
   String _selectedCrop = '--Select Variety--';
   String _selectedDuration = '--Select Duration--';
@@ -35,6 +38,10 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   String? _rowSpacingError;
   String? _cropSpacingError;
   String? _dripperDischargeError;
+  String formatEmail(String email) {
+    // Replace '@' and '.' with '_'
+    return email.replaceAll('@', '_').replaceAll('.', '_');
+  }
 
   // Dropdown items
   List<String> cropDropDown = [
@@ -159,6 +166,49 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
         backgroundColor: Colors.black26,
         title: const Text('Crop Details'),
         titleTextStyle: const TextStyle(color: Colors.white),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                '',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  LoginPage.routeName,
+                      (_) => false,
+                );
+              },
+              child: const Text('Log Out'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                clearUserData(context);
+              },
+              child: const Text('Delete Account'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red, // Set the button color to red
+              ),
+            ),
+            if (userEmail != null)
+              Text(
+                'User email: ${formatEmail(userEmail!)}', // Display the formatted email
+                style: const TextStyle(fontSize: 16.0, color: Colors.white),
+                textAlign: TextAlign.center,
+              ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Container(
@@ -339,6 +389,16 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       });
     }
   }
+  void clearUserData(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    print('All shared preferences cleared');
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      LoginPage.routeName,
+          (_) => false,
+    );
+  }
+
 
   void fetchPanAndNavigateToCalculationPage() async {
     try {
