@@ -238,7 +238,7 @@ class _LoginPageState extends State<LoginPage>
                 : const Center(
               child: CircularProgressIndicator(
                 strokeWidth: 2.0,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
               ),
             ),
           ),
