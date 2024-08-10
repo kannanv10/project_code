@@ -1,12 +1,11 @@
-import 'package:flutter/services.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Make sure to import shared_preferences
 import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 import 'package:node_auth/pages/login/login_page.dart';
-import 'package:rx_shared_preferences/rx_shared_preferences.dart';
-import 'CalculationPage.dart';
+import 'package:node_auth/pages/CalculationPage.dart';
 
 class CropDetailsPage extends StatefulWidget {
   static const routeName = '/crop_details_page';
@@ -38,6 +37,9 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   String? _rowSpacingError;
   String? _cropSpacingError;
   String? _dripperDischargeError;
+
+  bool _isLoading = false; // Loading state
+
   String formatEmail(String email) {
     // Replace '@' and '.' with '_'
     return email.replaceAll('@', '_').replaceAll('.', '_');
@@ -54,6 +56,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
   ];
 
   List<String> durationDropDown = ['--Select Duration--', '90', '110', '150', '70', '75'];
+
   Widget buildLabeledNumericTextField(String label, TextEditingController controller, String? errorText, String unit) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,7 +67,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
           children: [
             Container(
               height: 40,
-              width: 75,  // Set a fixed width for the text field
+              width: 75, // Set a fixed width for the text field
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10.0), // Rounded corners
                 color: Colors.white, // Textbox background color
@@ -74,7 +77,6 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
                 child: TextField(
                   controller: controller,
                   keyboardType: TextInputType.number,
-
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}$')),
                   ], // Allow only numbers with a maximum of 2 digits
@@ -104,13 +106,11 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
     );
   }
 
-
-
-
   @override
   void initState() {
     super.initState();
     _initializeFirebaseMessaging();
+    _fetchUserEmail(); // Fetch user email from shared preferences
   }
 
   void _initializeFirebaseMessaging() async {
@@ -129,6 +129,13 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
     print("valueda:${widget.pan}");
   }
 
+  void _fetchUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userEmail = prefs.getString('userEmail');
+    });
+  }
+
   void _validateAndSave() {
     setState(() {
       // Reset error messages
@@ -136,14 +143,14 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       _durationError = null;
       _dateError = null;
       _rowSpacingError = null;
-      _cropSpacingError = null;
+      //_cropSpacingError = null;
       _dripperDischargeError = null;
 
       // Validate each field
       if (_selectedCrop == '--Select Variety--') _cropError = 'Please select a crop variety';
       if (_selectedDuration == '--Select Duration--') _durationError = 'Please select a crop duration';
       if (_rowSpacingController.text.isEmpty) _rowSpacingError = 'Please enter row spacing';
-      if (_cropSpacingController.text.isEmpty) _cropSpacingError = 'Please enter crop spacing';
+      //if (_cropSpacingController.text.isEmpty) _cropSpacingError = 'Please enter crop spacing';
       if (_dripperDischargeController.text.isEmpty) _dripperDischargeError = 'Please enter dripper discharge';
     });
 
@@ -152,7 +159,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
         _durationError == null &&
         _dateError == null &&
         _rowSpacingError == null &&
-        _cropSpacingError == null &&
+        //_cropSpacingError == null &&
         _dripperDischargeError == null) {
       fetchPanAndNavigateToCalculationPage();
     }
@@ -173,16 +180,24 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Colors.blueGrey,
               ),
-              child: Text(
-                '',
-                style: TextStyle(
+              child: CircleAvatar(
+                backgroundColor: Colors.deepOrange,
+                radius: 25,
+                child: Icon(
+                  Icons.person,
+                  size: 50,
                   color: Colors.white,
-                  fontSize: 24,
                 ),
               ),
             ),
+            if (userEmail != null)
+              Text(
+                'Username: ${formatEmail(userEmail!)}', // Display the formatted email
+                style: const TextStyle(fontSize: 15.0, color: Colors.green),
+                textAlign: TextAlign.center,
+              ),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pushNamedAndRemoveUntil(
@@ -201,16 +216,12 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
                 backgroundColor: Colors.red, // Set the button color to red
               ),
             ),
-            if (userEmail != null)
-              Text(
-                'User email: ${formatEmail(userEmail!)}', // Display the formatted email
-                style: const TextStyle(fontSize: 16.0, color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
           ],
         ),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator()) // Show loading spinner
+          : SingleChildScrollView(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.8,
           margin: const EdgeInsets.symmetric(vertical: 50, horizontal: 50),
@@ -250,41 +261,10 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
               ),
               const SizedBox(height: 20.0),
               buildDatePickerButton('Sowing Date', _dateError),
-              // const SizedBox(height: 20.0),
-              // TextField(
-              //   controller: _rowSpacingController,
-              //   keyboardType: TextInputType.number,
-              //   decoration: InputDecoration(
-              //     hintText: 'Row Spacing in cm',
-              //     errorText: _rowSpacingError,
-              //   ),
-              // ),
-              // const SizedBox(height: 20.0),
-              // TextField(
-              //   controller: _cropSpacingController,
-              //   keyboardType: TextInputType.number,
-              //   decoration: InputDecoration(
-              //     hintText: 'Crop Spacing in cm',
-              //     errorText: _cropSpacingError,
-              //   ),
-              // ),
-              // const SizedBox(height: 20.0),
-              // TextField(
-              //   controller: _dripperDischargeController,
-              //   keyboardType: TextInputType.number,
-              //   decoration: InputDecoration(
-              //     hintText: 'Dripper Discharge in Lph',
-              //     errorText: _dripperDischargeError,
-              //   ),
-              // ),
               const SizedBox(height: 20.0),
               buildLabeledNumericTextField('Row Spacing', _rowSpacingController, _rowSpacingError, 'cm'),
-              //const SizedBox(height: 20.0),
-              //buildLabeledNumericTextField('Crop Spacing', _cropSpacingController, _cropSpacingError, 'cm'),
               const SizedBox(height: 20.0),
               buildLabeledNumericTextField('Dripper Discharge', _dripperDischargeController, _dripperDischargeError, 'Lph'),
-
-
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: _validateAndSave,
@@ -310,6 +290,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       children: [
         Text(labelText),
         Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10.0), // Rounded corners
             color: Colors.white, // Dropdown background color
@@ -389,6 +370,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
       });
     }
   }
+
   void clearUserData(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -399,15 +381,21 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
     );
   }
 
-
   void fetchPanAndNavigateToCalculationPage() async {
+    setState(() {
+      _isLoading = true; // Show loading spinner
+    });
+
     try {
       // Fetch FCM token
       String? fcmToken = await _firebaseMessaging.getToken();
       print('FCM Token: $fcmToken');
 
+      // Format user email
+      String formattedEmail = formatEmail(userEmail ?? '');
+
       // Reference to the database
-      final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/${widget.greenKey}');
+      final DatabaseReference ref = FirebaseDatabase.instance.ref('user/$formattedEmail/greenhouseDetails/${widget.greenKey}');
 
       // Prepare data to update
       Map<String, dynamic> dataToUpdate = {
@@ -415,7 +403,7 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
         'selectedDuration': _selectedDuration,
         'selectedDate': _selectedDate.toIso8601String(),
         'rowSpacing': _rowSpacingController.text,
-        'cropSpacing': _cropSpacingController.text,
+        //'cropSpacing': _cropSpacingController.text,
         'dripperDischarge': _dripperDischargeController.text,
       };
 
@@ -438,16 +426,477 @@ class _CropDetailsPageState extends State<CropDetailsPage> {
             selectedDuration: _selectedDuration,
             selectedDate: _selectedDate,
             rowSpacing: _rowSpacingController.text,
-            cropSpacing: _cropSpacingController.text,
+            //cropSpacing: _cropSpacingController.text,
             dripperDischarge: _dripperDischargeController.text,
           ),
         ),
       );
     } catch (error) {
       print('Failed to fetch pan: $error');
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading spinner
+      });
     }
   }
 }
+
+
+
+
+
+// import 'package:flutter/services.dart';
+//
+// import 'package:flutter/material.dart';
+// import 'package:firebase_database/firebase_database.dart';
+// import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
+// import 'package:node_auth/pages/login/login_page.dart';
+// import 'package:rx_shared_preferences/rx_shared_preferences.dart';
+// import 'CalculationPage.dart';
+//
+// class CropDetailsPage extends StatefulWidget {
+//   static const routeName = '/crop_details_page';
+//   final String? greenKey;
+//   final String? pan;
+//
+//   const CropDetailsPage({Key? key, required this.greenKey, this.pan}) : super(key: key);
+//
+//   @override
+//   _CropDetailsPageState createState() => _CropDetailsPageState();
+// }
+//
+// class _CropDetailsPageState extends State<CropDetailsPage> {
+//   final TextEditingController _cropSpacingController = TextEditingController();
+//   final TextEditingController _rowSpacingController = TextEditingController();
+//   final TextEditingController _dripperDischargeController = TextEditingController();
+//   String? userEmail;
+//
+//   String _selectedCrop = '--Select Variety--';
+//   String _selectedDuration = '--Select Duration--';
+//   DateTime _selectedDate = DateTime.now();
+//
+//   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+//
+//   // Validation error messages
+//   String? _cropError;
+//   String? _durationError;
+//   String? _dateError;
+//   String? _rowSpacingError;
+//   String? _cropSpacingError;
+//   String? _dripperDischargeError;
+//   String formatEmail(String email) {
+//     // Replace '@' and '.' with '_'
+//     return email.replaceAll('@', '_').replaceAll('.', '_');
+//   }
+//
+//   // Dropdown items
+//   List<String> cropDropDown = [
+//     '--Select Variety--',
+//     'Tomato',
+//     'Cucumber',
+//     'Capsicum',
+//     'String bean',
+//     'Cauliflower',
+//   ];
+//
+//   List<String> durationDropDown = ['--Select Duration--', '90', '110', '150', '70', '75'];
+//   Widget buildLabeledNumericTextField(String label, TextEditingController controller, String? errorText, String unit) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text("$label:"),
+//         const SizedBox(height: 3),
+//         Row(
+//           children: [
+//             Container(
+//               height: 40,
+//               width: 75,  // Set a fixed width for the text field
+//               decoration: BoxDecoration(
+//                 borderRadius: BorderRadius.circular(10.0), // Rounded corners
+//                 color: Colors.white, // Textbox background color
+//               ),
+//               child: Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 2.0),
+//                 child: TextField(
+//                   controller: controller,
+//                   keyboardType: TextInputType.number,
+//
+//                   inputFormatters: [
+//                     FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}$')),
+//                   ], // Allow only numbers with a maximum of 2 digits
+//                   decoration: InputDecoration(
+//                     hintText: '0',
+//                     errorText: errorText,
+//                     border: InputBorder.none, // Remove default border
+//                     contentPadding: EdgeInsets.zero,
+//                   ),
+//                   style: const TextStyle(fontSize: 14.0),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(width: 5),
+//             Text(unit, style: const TextStyle(fontSize: 16.0)),
+//           ],
+//         ),
+//         if (errorText != null)
+//           Padding(
+//             padding: const EdgeInsets.only(top: 5.0),
+//             child: Text(
+//               errorText,
+//               style: const TextStyle(color: Colors.red, fontSize: 12.0),
+//             ),
+//           ),
+//       ],
+//     );
+//   }
+//
+//
+//
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeFirebaseMessaging();
+//   }
+//
+//   void _initializeFirebaseMessaging() async {
+//     await FirebaseMessaging.instance.setAutoInitEnabled(true);
+//     _firebaseMessaging.getToken().then((String? token) {
+//       print('FCM Token: $token');
+//     });
+//
+//     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+//       // Handle incoming messages when the app is in the foreground
+//     });
+//
+//     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+//       // Handle when the app is opened from a background state
+//     });
+//     print("valueda:${widget.pan}");
+//   }
+//
+//   void _validateAndSave() {
+//     setState(() {
+//       // Reset error messages
+//       _cropError = null;
+//       _durationError = null;
+//       _dateError = null;
+//       _rowSpacingError = null;
+//       _cropSpacingError = null;
+//       _dripperDischargeError = null;
+//
+//       // Validate each field
+//       if (_selectedCrop == '--Select Variety--') _cropError = 'Please select a crop variety';
+//       if (_selectedDuration == '--Select Duration--') _durationError = 'Please select a crop duration';
+//       if (_rowSpacingController.text.isEmpty) _rowSpacingError = 'Please enter row spacing';
+//       if (_cropSpacingController.text.isEmpty) _cropSpacingError = 'Please enter crop spacing';
+//       if (_dripperDischargeController.text.isEmpty) _dripperDischargeError = 'Please enter dripper discharge';
+//     });
+//
+//     // If all fields are valid, proceed to the next page
+//     if (_cropError == null &&
+//         _durationError == null &&
+//         _dateError == null &&
+//         _rowSpacingError == null &&
+//         _cropSpacingError == null &&
+//         _dripperDischargeError == null) {
+//       fetchPanAndNavigateToCalculationPage();
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//
+//       backgroundColor: Colors.purple[900], // Dark purple background
+//       appBar: AppBar(
+//         backgroundColor: Colors.black26,
+//         title: const Text('Crop Details'),
+//         titleTextStyle: const TextStyle(color: Colors.white),
+//       ),
+//       drawer: Drawer(
+//         child: ListView(
+//           padding: EdgeInsets.zero,
+//           children: [
+//             const DrawerHeader(
+//               decoration: BoxDecoration(
+//                 color: Colors.blue,
+//               ),
+//               child: Text(
+//                 '',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontSize: 24,
+//                 ),
+//               ),
+//             ),
+//             ElevatedButton(
+//               onPressed: () {
+//                 Navigator.of(context).pushNamedAndRemoveUntil(
+//                   LoginPage.routeName,
+//                       (_) => false,
+//                 );
+//               },
+//               child: const Text('Log Out'),
+//             ),
+//             ElevatedButton(
+//               onPressed: () {
+//                 clearUserData(context);
+//               },
+//               child: const Text('Delete Account'),
+//               style: ElevatedButton.styleFrom(
+//                 backgroundColor: Colors.red, // Set the button color to red
+//               ),
+//             ),
+//             if (userEmail != null)
+//               Text(
+//                 'User email: ${formatEmail(userEmail!)}', // Display the formatted email
+//                 style: const TextStyle(fontSize: 16.0, color: Colors.white),
+//                 textAlign: TextAlign.center,
+//               ),
+//           ],
+//         ),
+//       ),
+//       body: SingleChildScrollView(
+//
+//         child: Container(
+//           width: MediaQuery.of(context).size.width * 0.8,
+//           margin: const EdgeInsets.symmetric(vertical: 50, horizontal: 50),
+//           padding: const EdgeInsets.all(20.0),
+//           decoration: BoxDecoration(
+//             color: Colors.deepPurple[200], // Light purple background
+//             borderRadius: BorderRadius.circular(20.0), // Rounded corners
+//           ),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             mainAxisAlignment: MainAxisAlignment.start,
+//             children: [
+//               buildDropdownButton(
+//                 'Crop Name',
+//                 _selectedCrop,
+//                 cropDropDown,
+//                     (String? newValue) {
+//                   setState(() {
+//                     _selectedCrop = newValue!;
+//                   });
+//                 },
+//                 'Variety', // Hint text
+//                 _cropError,
+//               ),
+//               const SizedBox(height: 20.0),
+//               buildDropdownButton(
+//                 'Crop Duration',
+//                 _selectedDuration,
+//                 durationDropDown,
+//                     (String? newValue) {
+//                   setState(() {
+//                     _selectedDuration = newValue!;
+//                   });
+//                 },
+//                 'Number of days', // Hint text
+//                 _durationError,
+//               ),
+//               const SizedBox(height: 20.0),
+//               buildDatePickerButton('Sowing Date', _dateError),
+//               // const SizedBox(height: 20.0),
+//               // TextField(
+//               //   controller: _rowSpacingController,
+//               //   keyboardType: TextInputType.number,
+//               //   decoration: InputDecoration(
+//               //     hintText: 'Row Spacing in cm',
+//               //     errorText: _rowSpacingError,
+//               //   ),
+//               // ),
+//               // const SizedBox(height: 20.0),
+//               // TextField(
+//               //   controller: _cropSpacingController,
+//               //   keyboardType: TextInputType.number,
+//               //   decoration: InputDecoration(
+//               //     hintText: 'Crop Spacing in cm',
+//               //     errorText: _cropSpacingError,
+//               //   ),
+//               // ),
+//               // const SizedBox(height: 20.0),
+//               // TextField(
+//               //   controller: _dripperDischargeController,
+//               //   keyboardType: TextInputType.number,
+//               //   decoration: InputDecoration(
+//               //     hintText: 'Dripper Discharge in Lph',
+//               //     errorText: _dripperDischargeError,
+//               //   ),
+//               // ),
+//               const SizedBox(height: 20.0),
+//               buildLabeledNumericTextField('Row Spacing', _rowSpacingController, _rowSpacingError, 'cm'),
+//               //const SizedBox(height: 20.0),
+//               //buildLabeledNumericTextField('Crop Spacing', _cropSpacingController, _cropSpacingError, 'cm'),
+//               const SizedBox(height: 20.0),
+//               buildLabeledNumericTextField('Dripper Discharge', _dripperDischargeController, _dripperDischargeError, 'Lph'),
+//
+//
+//               const SizedBox(height: 20.0),
+//               ElevatedButton(
+//                 onPressed: _validateAndSave,
+//                 child: const Text('Save'),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+//
+//   Widget buildDropdownButton(
+//       String labelText,
+//       String value,
+//       List<String> items,
+//       Function(String?) onChanged,
+//       String hintText,
+//       String? errorText,
+//       ) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(labelText),
+//         Container(
+//           decoration: BoxDecoration(
+//             borderRadius: BorderRadius.circular(10.0), // Rounded corners
+//             color: Colors.white, // Dropdown background color
+//           ),
+//           child: DropdownButton<String>(
+//             value: value,
+//             onChanged: onChanged,
+//             items: items.map<DropdownMenuItem<String>>((String value) {
+//               return DropdownMenuItem<String>(
+//                 value: value,
+//                 child: Text(value),
+//               );
+//             }).toList(),
+//             hint: Text(hintText),
+//             isExpanded: true,
+//             underline: const SizedBox(), // Remove the underline
+//             style: const TextStyle(color: Colors.black), // Text color
+//           ),
+//         ),
+//         if (errorText != null)
+//           Padding(
+//             padding: const EdgeInsets.only(top: 5.0),
+//             child: Text(
+//               errorText,
+//               style: const TextStyle(color: Colors.red, fontSize: 12.0),
+//             ),
+//           ),
+//       ],
+//     );
+//   }
+//
+//   Widget buildDatePickerButton(String hintText, String? errorText) {
+//     String formattedDate = '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(hintText),
+//         TextButton(
+//           onPressed: () {
+//             _selectDate(context);
+//           },
+//           style: ButtonStyle(
+//             backgroundColor: MaterialStateProperty.all(Colors.white), // Background color
+//             shape: MaterialStateProperty.all(
+//               RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(10.0), // Rounded corners
+//               ),
+//             ),
+//           ),
+//           child: Text(
+//             formattedDate,
+//             style: const TextStyle(color: Colors.black), // Text color
+//           ),
+//         ),
+//         if (errorText != null)
+//           Padding(
+//             padding: const EdgeInsets.only(top: 5.0),
+//             child: Text(
+//               errorText,
+//               style: const TextStyle(color: Colors.red, fontSize: 12.0),
+//             ),
+//           ),
+//       ],
+//     );
+//   }
+//
+//   Future<void> _selectDate(BuildContext context) async {
+//     final DateTime? picked = await showDatePicker(
+//       context: context,
+//       initialDate: _selectedDate,
+//       firstDate: DateTime(2000),
+//       lastDate: DateTime(2100),
+//     );
+//     if (picked != null && picked != _selectedDate) {
+//       setState(() {
+//         _selectedDate = picked;
+//       });
+//     }
+//   }
+//   void clearUserData(BuildContext context) async {
+//     final prefs = await SharedPreferences.getInstance();
+//     await prefs.clear();
+//     print('All shared preferences cleared');
+//     Navigator.of(context).pushNamedAndRemoveUntil(
+//       LoginPage.routeName,
+//           (_) => false,
+//     );
+//   }
+//
+//
+//   void fetchPanAndNavigateToCalculationPage() async {
+//     try {
+//       // Fetch FCM token
+//       String? fcmToken = await _firebaseMessaging.getToken();
+//       print('FCM Token: $fcmToken');
+//
+//       // Reference to the database
+//       final DatabaseReference ref = FirebaseDatabase.instance.ref('user/1@gmail/greenhouseDetails/${widget.greenKey}');
+//
+//       // Prepare data to update
+//       Map<String, dynamic> dataToUpdate = {
+//         'selectedCrop': _selectedCrop,
+//         'selectedDuration': _selectedDuration,
+//         'selectedDate': _selectedDate.toIso8601String(),
+//         'rowSpacing': _rowSpacingController.text,
+//         'cropSpacing': _cropSpacingController.text,
+//         'dripperDischarge': _dripperDischargeController.text,
+//       };
+//
+//       // Check if FCM token is available
+//       if (fcmToken != null) {
+//         dataToUpdate['fcmToken'] = fcmToken; // Add FCM token to the data
+//       }
+//
+//       // Update data in Firebase
+//       await ref.update(dataToUpdate);
+//
+//       // Navigate to CalculationPage and pass crop details
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => CalculationPage(
+//             greenKey: widget.greenKey,
+//             pan: widget.pan ?? "",
+//             selectedCrop: _selectedCrop,
+//             selectedDuration: _selectedDuration,
+//             selectedDate: _selectedDate,
+//             rowSpacing: _rowSpacingController.text,
+//             cropSpacing: _cropSpacingController.text,
+//             dripperDischarge: _dripperDischargeController.text,
+//           ),
+//         ),
+//       );
+//     } catch (error) {
+//       print('Failed to fetch pan: $error');
+//     }
+//   }
+// }
 
 
 

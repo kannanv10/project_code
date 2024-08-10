@@ -5,6 +5,10 @@ import 'dart:async';
 import 'package:node_auth/pages/greenhouse/greenhouse_page.dart';
 import 'package:node_auth/pages/login/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+String formatEmail(String email) {
+  // Replace '@' and '.' with '_'
+  return email.replaceAll('@', '_').replaceAll('.', '_');
+}
 
 
 final databaseReference = FirebaseDatabase.instance.reference();
@@ -19,7 +23,7 @@ Timer? operationTimeTimer;
 bool isMotorOn = false;
 String selectedWettingArea = '8';
 String? userEmail;
-String formatEmail(String email) {
+String formattEmail(String email) {
   // Replace '@' and '.' with '_'
   return email.replaceAll('@', '_').replaceAll('.', '_');
 }
@@ -31,7 +35,7 @@ class CalculationPage extends StatefulWidget {
   final String selectedDuration;
   final DateTime selectedDate;
   final String rowSpacing;
-  final String cropSpacing;
+  //final String cropSpacing;
   final String dripperDischarge;
   final String pan;
   final String? greenKey;
@@ -42,7 +46,7 @@ class CalculationPage extends StatefulWidget {
     required this.selectedDuration,
     required this.selectedDate,
     required this.rowSpacing,
-    required this.cropSpacing,
+    //required this.cropSpacing,
     required this.dripperDischarge,
     required this.pan,
     required this.greenKey,
@@ -66,6 +70,14 @@ class _CalculationPageState extends State<CalculationPage>
     );
     _controller.forward();
     performCalculations();
+  }
+  Future<String?> getFormattedEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('userEmail'); // Assuming you store the email with the key 'email'
+    if (email != null) {
+      return formattEmail(email);
+    }
+    return null;
   }
 
   @override
@@ -214,6 +226,7 @@ class _CalculationPageState extends State<CalculationPage>
   }
 
   void irrigateTomorrow(BuildContext context) {
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -242,9 +255,11 @@ class _CalculationPageState extends State<CalculationPage>
       59,
     ).difference(currentTime);
 
-    Timer(timeUntil730AM, () {
-      databaseReference
-          .child("user/1@gmail/greenhouseDetails/${widget.greenKey}/pan")
+    Timer(timeUntil730AM, () async {
+      String? formattedEmail = await getFormattedEmail();
+      if (formattedEmail != null) {
+        databaseReference
+            .child("user/$formattedEmail/greenhouseDetails/${widget.greenKey}/pan")
           .once()
           .then((DatabaseEvent snapshot) {
         var newPan = snapshot.snapshot.value.toString();
@@ -253,7 +268,7 @@ class _CalculationPageState extends State<CalculationPage>
         double cumulativePan = newPanValue + panValue;
         performCalculationsForTomorrow(cumulativePan);
       });
-    });
+    }});
   }
 
   void performCalculationsForTomorrow(double modPan) {
@@ -319,9 +334,11 @@ class _CalculationPageState extends State<CalculationPage>
     });
   }
 
-  void updateMotorStatusToFirebase(String status) {
-    databaseReference
-        .child("user/1@gmail/greenhouseDetails/${widget.greenKey}")
+  Future<void> updateMotorStatusToFirebase(String status) async {
+
+    String? formattedEmail = await getFormattedEmail();
+    if (formattedEmail != null) {databaseReference
+        .child("user/$formattedEmail/greenhouseDetails/${widget.greenKey}")
         .update({
       "Motor status": status,
     }).then((_) {
@@ -329,7 +346,7 @@ class _CalculationPageState extends State<CalculationPage>
     }).catchError((error) {
       print("Failed to update motor status: $error");
     });
-  }
+  }}
 
   void _showResetConfirmationDialog(BuildContext context) {
     showDialog(
@@ -358,9 +375,12 @@ class _CalculationPageState extends State<CalculationPage>
     );
   }
 
-  void _resetCropData() {
+  Future<void> _resetCropData() async {
+    String? formattedEmail = await getFormattedEmail();
+    print("mail234564567:$formattedEmail");
+    if (formattedEmail != null) {
     databaseReference
-        .child("user/1@gmail/greenhouseDetails/${widget.greenKey}")
+        .child("user/$formattedEmail/greenhouseDetails/${widget.greenKey}")
         .once()
         .then((snapshot) {
       // Retrieve current data
@@ -373,7 +393,7 @@ class _CalculationPageState extends State<CalculationPage>
 
         // Update the node with the new data
         databaseReference
-            .child("user/1@gmail/greenhouseDetails/${widget.greenKey}")
+            .child("user/$formattedEmail/greenhouseDetails/${widget.greenKey}")
             .set(newData)
             .then((_) {
           print("Crop data reset successfully");
@@ -394,7 +414,7 @@ class _CalculationPageState extends State<CalculationPage>
     }).catchError((error) {
       print("Failed to fetch current crop data: $error");
     });
-  }
+  }}
 
   @override
   Widget build(BuildContext context) {
@@ -402,49 +422,55 @@ class _CalculationPageState extends State<CalculationPage>
       appBar: AppBar(
         title: const Text('Calculation Page'),
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(
+
+                  color: Colors.blueGrey,
+                ),
+                child: CircleAvatar(
+                  backgroundColor: Colors.deepOrange,
+                  radius: 25,
+                  child: Icon(
+                    Icons.person,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
+
+
               ),
-              child: Text(
-                '',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+              if (userEmail != null)
+                Text(
+                  'Username: ${formattEmail(userEmail !)}', // Display the formatted email
+                  style: const TextStyle(fontSize: 15.0, color: Colors.green),
+                  textAlign: TextAlign.center,
+                ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    LoginPage.routeName,
+                        (_) => false,
+                  );
+                },
+                child: const Text('Log Out'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  clearUserData(context);
+                },
+                child: const Text('Delete Account'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red, // Set the button color to red
                 ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  LoginPage.routeName,
-                      (_) => false,
-                );
-              },
-              child: const Text('Log Out'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                clearUserData(context);
-              },
-              child: const Text('Delete Account'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Set the button color to red
-              ),
-            ),
-            if (userEmail != null)
-              Text(
-                'User email: ${formatEmail(userEmail!)}', // Display the formatted email
-                style: const TextStyle(fontSize: 16.0, color: Colors.white),
-                textAlign: TextAlign.center,
-              ),
-          ],
+
+            ],
+          ),
         ),
-      ),
       body: SingleChildScrollView(
         child: Center(
           child: Container(
@@ -749,6 +775,7 @@ class _CalculationPageState extends State<CalculationPage>
 
 
 }
+
 
 
 //

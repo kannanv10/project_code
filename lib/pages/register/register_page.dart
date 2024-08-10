@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:did_change_dependencies/did_change_dependencies.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc_pattern/flutter_bloc_pattern.dart';
 import 'package:flutter_disposebag/flutter_disposebag.dart';
@@ -145,6 +146,16 @@ class _RegisterPageState extends State<RegisterPage>
   Stream<void> handleMessage(RegisterMessage message) async* {
     if (message is RegisterSuccessMessage) {
       context.showSnackBar('Register successfully');
+
+      // Format the email
+      final formattedEmail = message.email.replaceAll('@', '_').replaceAll('.', '');
+
+      // Create a reference to the Firebase Database
+      final databaseRef = FirebaseDatabase.instance.ref('user/$formattedEmail/greenhouseDetails/Green1');
+
+      // Set the "hi message" in the node
+      await databaseRef.set({'message': 'hi message'});
+
       await delay(1000);
       yield null;
       // ignore: use_build_context_synchronously

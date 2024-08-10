@@ -80,7 +80,7 @@ class _LoginPageState extends State<LoginPage>
     final loginBloc = BlocProvider.of<LoginBloc>(context);
 
     return Scaffold(
-      backgroundColor: Colors.black12,
+      backgroundColor: Colors.blueGrey,
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -205,6 +205,7 @@ class _LoginPageState extends State<LoginPage>
       stream: loginBloc.passwordError$,
       builder: (context, snapshot) {
         return PasswordTextField(
+
           errorText: snapshot.data,
           onChanged: loginBloc.passwordChanged,
           labelText: 'Password',
